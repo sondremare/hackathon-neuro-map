@@ -19,6 +19,7 @@ import ControlPanel from "./ControlPanel";
 import FileUpload from "./FileUpload";
 import NiftiReader from "nifti-reader-js";
 import vtkDataArray from "@kitware/vtk.js/Common/Core/DataArray";
+import vtkGenericRenderWindow from "@kitware/vtk.js/Rendering/Misc/GenericRenderWindow";
 
 function App() {
   const vtkContainerRef = useRef(null);
@@ -89,13 +90,15 @@ function App() {
 
   useEffect(() => {
     if (!context.current) {
-      const fullScreenRenderer = vtkFullScreenRenderWindow.newInstance({
+
+      const genericScreenRender = vtkGenericRenderWindow.newInstance({
         background: [0.5, 0.5, 0.5],
-        rootContainer: vtkContainerRef.current,
       });
 
-      const renderWindow = fullScreenRenderer.getRenderWindow();
-      const renderer = fullScreenRenderer.getRenderer();
+      genericScreenRender.setContainer(vtkContainerRef.current);
+
+      const renderWindow = genericScreenRender.getRenderWindow();
+      const renderer = genericScreenRender.getRenderer();
 
       const imageActorI = vtkImageSlice.newInstance();
       const imageActorJ = vtkImageSlice.newInstance();
@@ -105,55 +108,7 @@ function App() {
       renderer.addActor(imageActorJ);
       renderer.addActor(imageActorI);
 
-      /* READING DATA */
-
-      // const dataUrl = `${__BASE_PATH__}/tore.nii.gz`;
-
-
-      // const niftiReader = new NiftiReader();
-      // niftiReader.setFileName("path/to/nifti/file.nii.gz");
-      // niftiReader.readFile();
-
-      console.log('niftiReader');
-
-
-      /* OLD  */
-      const reader = vtkHttpDataSetReader.newInstance({
-        fetchGzip: true,
-      });
-
-      // const dataUrl = `${__BASE_PATH__}/data/volume/headsq.vti`;
-      // const dataUrl = `tore/data/volume/headsq.vti`;
-
-      // loads data into the reader object
-      // await reader.setUrl(dataUrl, { loadData: true });
-
-      // const data = reader.getOutputData();
-      // const dataRange = data.getPointData().getScalars().getRange();
-      // const extent = data.getExtent();
-
-      // const imageMapperK = vtkImageMapper.newInstance();
-      // imageMapperK.setInputData(imageData);
-      // imageMapperK.setKSlice(30);
-      // imageActorK.setMapper(imageMapperK);
-      //
-      // console.log('DUDE');
-      // const imageMapperJ = vtkImageMapper.newInstance();
-      // imageMapperJ.setInputData(data);
-      // imageMapperJ.setJSlice(30);
-      // imageActorJ.setMapper(imageMapperJ);
-
-      // const imageMapperI = vtkImageMapper.newInstance();
-      // imageMapperI.setInputData(data);
-      // imageMapperI.setISlice(30);
-      // imageActorI.setMapper(imageMapperI);
-
-      // renderer.resetCamera();
-      // renderer.resetCameraClippingRange();
-      // renderWindow.render();
-
       context.current = {
-        fullScreenRenderer,
         renderWindow,
         renderer,
         imageActorI,
