@@ -10,18 +10,18 @@ import '@kitware/vtk.js/IO/Core/DataAccessHelper/HtmlDataAccessHelper';
 import '@kitware/vtk.js/IO/Core/DataAccessHelper/HttpDataAccessHelper';
 import '@kitware/vtk.js/IO/Core/DataAccessHelper/JSZipDataAccessHelper';
 
-import vtkFullScreenRenderWindow from '@kitware/vtk.js/Rendering/Misc/FullScreenRenderWindow';
-import vtkHttpDataSetReader from '@kitware/vtk.js/IO/Core/HttpDataSetReader';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageData from "@kitware/vtk.js/Common/DataModel/ImageData";
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import ControlPanel from "./ControlPanel";
-import FileUpload from "./FileUpload";
 import NiftiReader from "nifti-reader-js";
 import vtkDataArray from "@kitware/vtk.js/Common/Core/DataArray";
-import vtkGenericRenderWindow from "@kitware/vtk.js/Rendering/Misc/GenericRenderWindow";
+import {setUpView} from "./setUpView";
 
 function App() {
+  const sagitalContainerRef = useRef(null);
+  const axialContainerRef = useRef(null);
+  const coronalContainerRef = useRef(null);
   const vtkContainerRef = useRef(null);
   const context = useRef(null);
   const [imageData, setImageData] = useState(null);
@@ -59,9 +59,10 @@ function App() {
     setImageData(localImageData);
   };
 
+  // Show full 3D view
   useEffect(() => {
     if (context.current) {
-      const {imageActorI, imageActorJ, imageActorK, renderer, renderWindow} = context.current;
+      const {imageActorI, imageActorJ, imageActorK, sagitalView, fullBlastView, axialView, coronalView} = context.current;
       const imageMapperK = vtkImageMapper.newInstance();
       imageMapperK.setInputData(imageData);
       imageMapperK.setKSlice(30);
@@ -78,46 +79,49 @@ function App() {
       imageMapperI.setISlice(30);
       imageActorI.setMapper(imageMapperI);
       //
-      renderer.resetCamera();
-      renderer.resetCameraClippingRange();
-      console.log('RENDER PLZ');
-      renderWindow.render();
-      console.log('HAS RENEDERED?');
-    } else {
-      console.log('FOOOK');
+      sagitalView.renderer.resetCamera();
+      fullBlastView.renderer.resetCamera();
+      axialView.renderer.resetCamera();
+      coronalView.renderer.resetCamera();
+
+      sagitalView.renderer.resetCameraClippingRange();
+      fullBlastView.renderer.resetCameraClippingRange();
+      axialView.renderer.resetCameraClippingRange();
+      coronalView.renderer.resetCameraClippingRange();
+
+      sagitalView.renderWindow.render();
+      fullBlastView.renderWindow.render();
+      axialView.renderWindow.render();
+      coronalView.renderWindow.render();
+
     }
   }, [imageData]);
 
+  // setup 3d view
   useEffect(() => {
-    if (!context.current) {
+    if (vtkContainerRef && sagitalContainerRef && axialContainerRef && coronalContainerRef) {
+      if (!context.current) {
 
-      const genericScreenRender = vtkGenericRenderWindow.newInstance({
-        background: [0.5, 0.5, 0.5],
-      });
+        const imageActorI = vtkImageSlice.newInstance();
+        const imageActorJ = vtkImageSlice.newInstance();
+        const imageActorK = vtkImageSlice.newInstance();
 
-      genericScreenRender.setContainer(vtkContainerRef.current);
+        const sagitalView = setUpView(sagitalContainerRef, [imageActorI]);
+        const axialView = setUpView(axialContainerRef, [imageActorJ]);
+        const coronalView = setUpView(coronalContainerRef, [imageActorK]);
 
-      const renderWindow = genericScreenRender.getRenderWindow();
-      const renderer = genericScreenRender.getRenderer();
+        const fullBlastView = setUpView(vtkContainerRef, [imageActorI, imageActorJ, imageActorK]);
 
-      const imageActorI = vtkImageSlice.newInstance();
-      const imageActorJ = vtkImageSlice.newInstance();
-      const imageActorK = vtkImageSlice.newInstance();
-
-      renderer.addActor(imageActorK);
-      renderer.addActor(imageActorJ);
-      renderer.addActor(imageActorI);
-
-      context.current = {
-        renderWindow,
-        renderer,
-        imageActorI,
-        imageActorJ,
-        imageActorK,
-        // coneSource,
-        // actor,
-        // mapper,
-      };
+        context.current = {
+          sagitalView,
+          axialView,
+          coronalView,
+          fullBlastView,
+          imageActorI,
+          imageActorJ,
+          imageActorK,
+        };
+      }
     }
 
     return () => {
@@ -128,35 +132,22 @@ function App() {
     //     const { fullScreenRenderer, actor, mapper } = context.current;
     //     actor.delete();
     //     mapper.delete();
-        // fullScreenRenderer.delete();
-        // context.current = null;
-      // }
+    // fullScreenRenderer.delete();
+    // context.current = null;
+    // }
     // };
-  }, [vtkContainerRef]);
-
-
-  /* **/
-
-  //
-  // useEffect(() => {
-  //   if (context.current) {
-  //     const { coneSource, renderWindow } = context.current;
-  //     coneSource.setResolution(coneResolution);
-  //     renderWindow.render();
-  //   }
-  // }, [coneResolution]);
-
-  // useEffect(() => {
-  //   if (context.current) {
-  //     const { actor, renderWindow } = context.current;
-  //     actor.getProperty().setRepresentation(representation);
-  //     renderWindow.render();
-  //   }
-  // }, [representation]);
+  }, [vtkContainerRef, sagitalContainerRef, axialContainerRef, coronalContainerRef]);
 
   return (
-      <div>
-        <div ref={vtkContainerRef} />
+      <div style={{display: 'flex', flexDirection: 'column'}}>
+        <div style={{display: 'flex'}}>
+          <div ref={sagitalContainerRef} style={{height: 500, width: 500}}/>
+          <div ref={axialContainerRef} style={{height: 500, width: 500}}/>
+        </div>
+        <div style={{display: 'flex'}}>
+          <div ref={coronalContainerRef} style={{height: 500, width: 500}}/>
+          <div ref={vtkContainerRef} style={{height: 500, width: 500}}/>
+        </div>
         <ControlPanel onUpload={readNifty}/>
       </div>
   );
