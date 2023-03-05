@@ -121,11 +121,6 @@ function App() {
       imageMapperI.setInputData(imageData);
       imageActorI.setMapper(imageMapperI);
 
-      sagittalView.renderer.resetCamera();
-      fullBlastView.renderer.resetCamera();
-      axialView.renderer.resetCamera();
-      coronalView.renderer.resetCamera();
-
       setFocalPoint([84.5, 105, 80])
 
       context.current = {
@@ -145,21 +140,27 @@ function App() {
 
   useEffect (() => {
     if (context.current && focalPoint) {
-      const [k, j, i] = focalPoint
+      console.log(focalPoint)
+      const [i, j, k] = focalPoint
       const {imageMapperI, imageMapperJ, imageMapperK, sagittalView, fullBlastView, axialView, coronalView} = context.current;
       imageMapperK.setKSlice(k);
       imageMapperJ.setJSlice(j);
       imageMapperI.setISlice(i);
 
+      sagittalView.renderer.resetCamera();
+      fullBlastView.renderer.resetCamera();
+      axialView.renderer.resetCamera();
+      coronalView.renderer.resetCamera();
+
       sagittalView.renderer.getActiveCamera().setViewUp(0, 0, 1)
-      sagittalView.renderer.getActiveCamera().setFocalPoint(k, j, i)
-      sagittalView.renderer.getActiveCamera().setPosition(k+505, j, i)
+      sagittalView.renderer.getActiveCamera().setFocalPoint(i, j, k)
+      sagittalView.renderer.getActiveCamera().setPosition(i+510, j, k)
 
-      axialView.renderer.getActiveCamera().setFocalPoint(k, j, i)
-      axialView.renderer.getActiveCamera().setPosition(k, j + 485, i)
+      axialView.renderer.getActiveCamera().setFocalPoint(i, j, k)
+      axialView.renderer.getActiveCamera().setPosition(i, j + 485, k)
 
-      coronalView.renderer.getActiveCamera().setFocalPoint(k, j, i)
-      coronalView.renderer.getActiveCamera().setPosition(k, j, i + 520)
+      coronalView.renderer.getActiveCamera().setFocalPoint(i, j, k)
+      coronalView.renderer.getActiveCamera().setPosition(i, j, k + 520)
 
       sagittalView.renderWindow.render();
       fullBlastView.renderWindow.render();
@@ -178,6 +179,10 @@ function App() {
   //  maxK = dimensions[2]
   //}
 
+  var setI = (value) => {
+    setFocalPoint([value, 105, 80])
+  }
+
   return (
     <Container>
       <Row>
@@ -188,18 +193,22 @@ function App() {
           <div ref={sagittalContainerRef} style={{height: 250, width: 250}}/>
           <ReactBootstrapSlider
             min={0}
+            max={256}
+            change={(e) => {setI(e.target.value)}}
           />
         </Col>
         <Col>
           <div ref={axialContainerRef} style={{height: 250, width: 250}}/>
           <ReactBootstrapSlider
             min={0}
+            max={256}
           />
         </Col>
         <Col>
           <div ref={coronalContainerRef} style={{height: 250, width: 250}}/>
           <ReactBootstrapSlider
             min={0}
+            max={256}
           />
         </Col>
         <Col>
