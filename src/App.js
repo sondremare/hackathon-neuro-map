@@ -49,8 +49,10 @@ function App() {
   const context = useRef(null);
 
   const [imageData, setImageData] = useState(null);
-  const [focalPoint, setFocalPoint] = useState(null);
-  const [dimensions, setDimensions] = useState(null);
+  const [focalPoint, setFocalPoint] = useState([0, 0, 0]);
+  const [dimensions, setDimensions] = useState([255, 255, 255]);
+  const focalRef = useRef()
+  focalRef.current = focalPoint
 
   const readNifti = (name, file) => {
     const data = NiftiReader.isCompressed(file) ? NiftiReader.decompress(file) : file;
@@ -121,7 +123,7 @@ function App() {
       imageMapperI.setInputData(imageData);
       imageActorI.setMapper(imageMapperI);
 
-      setFocalPoint([84.5, 105, 80])
+      setFocalPoint(dimensions.map((x) => x / 2))
 
       context.current = {
         sagittalView,
@@ -139,8 +141,8 @@ function App() {
   }, [imageData]);
 
   useEffect (() => {
-    if (context.current && focalPoint) {
-      console.log(focalPoint)
+    if (context.current && focalPoint && focalPoint != [0, 0, 0]) {
+      const center = dimensions.map((x) => x / 2.0)
       const [i, j, k] = focalPoint
       const {imageMapperI, imageMapperJ, imageMapperK, sagittalView, fullBlastView, axialView, coronalView} = context.current;
       imageMapperK.setKSlice(k);
@@ -153,14 +155,14 @@ function App() {
       coronalView.renderer.resetCamera();
 
       sagittalView.renderer.getActiveCamera().setViewUp(0, 0, 1)
-      sagittalView.renderer.getActiveCamera().setFocalPoint(i, j, k)
-      sagittalView.renderer.getActiveCamera().setPosition(i+510, j, k)
+      sagittalView.renderer.getActiveCamera().setFocalPoint(i, center[1], center[2])
+      sagittalView.renderer.getActiveCamera().setPosition(i+510, center[1], center[2])
 
-      axialView.renderer.getActiveCamera().setFocalPoint(i, j, k)
-      axialView.renderer.getActiveCamera().setPosition(i, j + 485, k)
+      axialView.renderer.getActiveCamera().setFocalPoint(center[0], j, center[2])
+      axialView.renderer.getActiveCamera().setPosition(center[0], j + 485, center[2])
 
-      coronalView.renderer.getActiveCamera().setFocalPoint(i, j, k)
-      coronalView.renderer.getActiveCamera().setPosition(i, j, k + 520)
+      coronalView.renderer.getActiveCamera().setFocalPoint(center[0], center[1], k)
+      coronalView.renderer.getActiveCamera().setPosition(center[0], center[1], k + 520)
 
       sagittalView.renderWindow.render();
       fullBlastView.renderWindow.render();
@@ -169,18 +171,19 @@ function App() {
     }
   }, [focalPoint])
 
-  //var maxI = 256
-  //var maxJ = 256
-  //var maxK = 256
+  const setI = (value) => {
+    const [i, j, k] = focalRef.current
+    setFocalPoint([value, j, k])
+  }
 
-  //if (dimensions) {
-  //  maxI = dimensions[0]
-  //  maxJ = dimensions[1]
-  //  maxK = dimensions[2]
-  //}
+  const setJ = (value) => {
+    const [i, j, k] = focalRef.current
+    setFocalPoint([i, value, k])
+  }
 
-  var setI = (value) => {
-    setFocalPoint([value, 105, 80])
+  var setK = (value) => {
+    const [i, j, k] = focalRef.current
+    setFocalPoint([i, j, value])
   }
 
   return (
@@ -193,7 +196,8 @@ function App() {
           <div ref={sagittalContainerRef} style={{height: 250, width: 250}}/>
           <ReactBootstrapSlider
             min={0}
-            max={256}
+            max={dimensions[0]}
+            value={focalPoint[0]}
             change={(e) => {setI(e.target.value)}}
           />
         </Col>
@@ -201,14 +205,18 @@ function App() {
           <div ref={axialContainerRef} style={{height: 250, width: 250}}/>
           <ReactBootstrapSlider
             min={0}
-            max={256}
+            max={dimensions[1]}
+            value={focalPoint[1]}
+            change={(e) => {setJ(e.target.value)}}
           />
         </Col>
         <Col>
           <div ref={coronalContainerRef} style={{height: 250, width: 250}}/>
           <ReactBootstrapSlider
             min={0}
-            max={256}
+            max={dimensions[2]}
+            value={focalPoint[2]}
+            change={(e) => {setK(e.target.value)}}
           />
         </Col>
         <Col>

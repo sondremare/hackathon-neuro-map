@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import NiftiReader from 'nifti-reader-js';
 
 function FileUpload({onUpload}) {
     const [selectedFile, setSelectedFile] = useState(null);
@@ -9,16 +8,10 @@ function FileUpload({onUpload}) {
     };
 
     const handleFileUpload = () => {
-        console.log('selectedFile', selectedFile);
-
-        // var blob = makeSlice(file, 0, file.size);
-
         const fileReader = new FileReader();
 
         fileReader.onloadend = function (evt) {
             if (evt.target.readyState === FileReader.DONE) {
-                console.log('fileREader done');
-                console.log('evt.target.result', evt.target.result);
                 onUpload(selectedFile.name, evt.target.result);
             }
         };
